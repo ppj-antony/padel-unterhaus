@@ -225,11 +225,11 @@ async def home(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {
-            "request": request,
             "tabelle": tabelle,
             "spiele": spiele,
             "teams": teams,
         },
+        request=request,
     )
 
 
