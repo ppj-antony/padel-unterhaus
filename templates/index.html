@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padel Unterhaus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.add("hidden");
+            }
+            tablinks = document.getElementsByClassName("tablink");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("border-lime-400", "text-lime-400");
+                tablinks[i].classList.add("border-transparent", "text-gray-400");
+            }
+            document.getElementById(tabName).classList.remove("hidden");
+            evt.currentTarget.classList.remove("border-transparent", "text-gray-400");
+            evt.currentTarget.classList.add("border-lime-400", "text-lime-400");
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans">
+
+    <!-- Header -->
+    <header class="text-center py-8 bg-slate-950/60 border-b border-slate-800">
+        <h1 class="text-3xl font-extrabold tracking-wider text-lime-400">PADEL UNTERHAUS</h1>
+        <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest">Saison 2026/27</p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-xl mx-auto mt-6 px-4">
+        <div class="flex border-b border-slate-800 justify-around text-sm font-semibold">
+            <button onclick="openTab(event, 'TabTabelle')" class="tablink py-3 px-4 border-b-2 border-lime-400 text-lime-400 transition-colors">
+                🏆 Tabelle
+            </button>
+            <button onclick="openTab(event, 'TabSpielplan')" class="tablink py-3 px-4 border-b-2 border-transparent text-gray-400 hover:text-slate-200 transition-colors">
+                🎾 Spielplan
+            </button>
+            <button onclick="openTab(event, 'TabTeams')" class="tablink py-3 px-4 border-b-2 border-transparent text-gray-400 hover:text-slate-200 transition-colors">
+                👥 Teams
+            </button>
+        </div>
+    </div>
+
+    <main class="max-w-xl mx-auto mt-6 px-4">
+
+        <!-- TAB 1: TABELLE -->
+        <div id="TabTabelle" class="tabcontent">
+            <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 shadow-xl">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-xs text-slate-400 border-b border-slate-700/60 uppercase">
+                            <th class="pb-3 w-8">#</th>
+                            <th class="pb-3">Team</th>
+                            <th class="pb-3 text-center">Sp.</th>
+                            <th class="pb-3 text-center">Sätze</th>
+                            <th class="pb-3 text-right">Pkt</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40 text-sm">
+                        {% for t in tabelle %}
+                        <tr class="hover:bg-slate-700/30 transition-colors">
+                            <td class="py-3 font-semibold text-slate-400">{{ t.platz }}</td>
+                            <td class="py-3 font-bold text-slate-100">{{ t.team }}</td>
+                            <td class="py-3 text-center text-slate-300">{{ t.spiele }}</td>
+                            <td class="py-3 text-center text-slate-300">{{ t.sätze }}</td>
+                            <td class="py-3 text-right font-black text-lime-400 text-base">{{ t.punkte }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-slate-400">Noch keine Spiele eingetragen.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: SPIELPLAN -->
+        <div id="TabSpielplan" class="tabcontent hidden">
+            <div class="space-y-3">
+                {% for s in spiele %}
+                <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-lg flex flex-col justify-between">
+                    <div class="flex justify-between text-xs text-slate-400 mb-2">
+                        <span>Runde {{ s.runde }} {% if s.datum %}({{ s.datum }}){% endif %}</span>
+                        <span class="text-slate-400">📍 {{ s.spielort }}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between font-semibold text-sm py-1">
+                        <span class="w-2/5 text-left text-slate-100">{{ s.team1 }}</span>
+                        <span class="w-1/5 text-center font-bold px-2 py-1 rounded bg-slate-900 border border-slate-700 text-lime-400">
+                            {{ s.ergebnis }}
+                        </span>
+                        <span class="w-2/5 text-right text-slate-100">{{ s.team2 }}</span>
+                    </div>
+
+                    {% if s.satz_details %}
+                    <div class="text-center text-xs text-slate-400 mt-2 pt-2 border-t border-slate-700/40">
+                        {{ s.satz_details }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-center text-slate-400 py-6">Keine Spiele gefunden.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- TAB 3: TEAMS -->
+        <div id="TabTeams" class="tabcontent hidden">
+            <div class="grid gap-3">
+                {% for team in teams %}
+                <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-lg">
+                    <h3 class="font-bold text-lime-400 text-base mb-1">{{ team.teamname }}</h3>
+                    <div class="text-xs text-slate-300 space-y-1">
+                        <p>👥 <span class="text-slate-100 font-medium">{{ team.spieler1 }}</span> & <span class="text-slate-100 font-medium">{{ team.spieler2 }}</span></p>
+                        <p class="text-slate-400">📍 Heimcourt: <span class="text-slate-200">{{ team.heimcourt }}</span></p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-center text-slate-400 py-6">Keine Teams geladen.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>
