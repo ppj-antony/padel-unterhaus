@@ -90,7 +90,7 @@ def lade_daten():
                         "spielort": spielort,
                         "gespielt": False,
                         "abgesagt": True,
-                        "ergebnis": "Abgesagt",
+                        "ergebnis": "Storno",
                         "satz_details": untere_zeile,
                     }
                 )
