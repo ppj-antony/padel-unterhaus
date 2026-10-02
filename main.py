@@ -13,10 +13,19 @@ SPIELPLAN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK2uRw7bU4
 TEAMS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK2uRw7bU4eF205lHo6qBNuomR9ZSNyHM78erlzNocqQJwmnvCpyVhEOYX67vpRwhFxmen3cUZIegK/pub?gid=0&single=true&output=csv"
 
 
+def clean_val(val) -> str:
+    """Hilfsfunktion zur sauberen Extraktion von String-Werten aus Pandas/CSV"""
+    if pd.isna(val) or val is None:
+        return ""
+    val_str = str(val).strip()
+    return "" if val_str.lower() == "nan" else val_str
+
+
 def lade_daten():
     try:
         # 1. Spielplan laden & Spaltennamen säubern
         res_spielplan = requests.get(SPIELPLAN_CSV_URL)
+        res_spielplan.encoding = "utf-8"
         df_spielplan = pd.read_csv(io.StringIO(res_spielplan.text))
         df_spielplan.columns = df_spielplan.columns.str.strip()
 
@@ -25,25 +34,28 @@ def lade_daten():
         direkte_duelle = {}
 
         for _, row in df_spielplan.iterrows():
-            runde = str(row.get("Runde", "")).strip()
-            t1 = str(row.get("Team_1", "")).strip()
-            t2 = str(row.get("Team_2", "")).strip()
-            datum = str(row.get("Datum", "")).strip()
-            spielort = str(row.get("Spielort", "")).strip()
+            t1 = clean_val(row.get("Team_1"))
+            t2 = clean_val(row.get("Team_2"))
+
+            # Zeilen ohne Teams überspringen
+            if not t1 or not t2:
+                continue
+
+            runde = clean_val(row.get("Runde"))
+            datum = clean_val(row.get("Datum"))
+            spielort = clean_val(row.get("Spielort"))
 
             # ABGESAGT-Checkbox & GRUND flexibel auslesen
             abgesagt_raw = row.get(
                 "ABGESAGT", row.get("Abgesagt", row.get("abgesagt", ""))
             )
-            abgesagt_val = str(abgesagt_raw).strip().upper()
+            abgesagt_val = clean_val(abgesagt_raw).upper()
             ist_abgesagt = abgesagt_val in ["TRUE", "WAHR", "1"]
 
             grund_raw = row.get(
                 "GRUND", row.get("Grund", row.get("grund", ""))
             )
-            grund_text = (
-                str(grund_raw).strip() if not pd.isna(grund_raw) else ""
-            )
+            grund_text = clean_val(grund_raw)
 
             s1_val = row.get("Punkte_Team1")
             s2_val = row.get("Punkte_Team2")
@@ -54,9 +66,10 @@ def lade_daten():
             t1_s3, t2_s3 = row.get("T1_S3"), row.get("T2_S3")
 
             ist_gespielt = False
+            s1, s2 = 0, 0
             if not ist_abgesagt and not pd.isna(s1_val) and not pd.isna(s2_val):
-                s1_str = str(s1_val).strip()
-                s2_str = str(s2_val).strip()
+                s1_str = clean_val(s1_val)
+                s2_str = clean_val(s2_val)
                 if s1_str != "" and s2_str != "":
                     try:
                         s1, s2 = int(float(s1_str)), int(float(s2_str))
@@ -65,11 +78,9 @@ def lade_daten():
                         ist_gespielt = False
 
             if ist_abgesagt:
-                # Text für den Bereich unter der Linie festlegen
                 untere_zeile = (
                     f"Grund: {grund_text}" if grund_text else "Abgesagt"
                 )
-
                 spiele.append(
                     {
                         "runde": runde,
@@ -122,10 +133,10 @@ def lade_daten():
                 for g1, g2 in [(t1_s1, t2_s1), (t1_s2, t2_s2), (t1_s3, t2_s3)]:
                     if not pd.isna(g1) and not pd.isna(g2):
                         try:
-                            satzergebnisse.append(
-                                f"{int(float(g1))}:{int(float(g2))}"
-                            )
-                        except ValueError:
+                            v1 = int(float(str(g1).strip()))
+                            v2 = int(float(str(g2).strip()))
+                            satzergebnisse.append(f"{v1}:{v2}")
+                        except (ValueError, TypeError):
                             pass
 
                 satz_details = (
@@ -197,19 +208,22 @@ def lade_daten():
 
         # 2. Teams laden
         res_teams = requests.get(TEAMS_CSV_URL)
+        res_teams.encoding = "utf-8"
         df_teams = pd.read_csv(io.StringIO(res_teams.text))
         df_teams.columns = df_teams.columns.str.strip()
 
         teams_liste = []
         for _, row in df_teams.iterrows():
-            teams_liste.append(
-                {
-                    "teamname": str(row.get("Teamname", "")).strip(),
-                    "spieler1": str(row.get("Spieler 1", "")).strip(),
-                    "spieler2": str(row.get("Spieler 2", "")).strip(),
-                    "heimcourt": str(row.get("Heimcourt", "")).strip(),
-                }
-            )
+            tname = clean_val(row.get("Teamname"))
+            if tname:
+                teams_liste.append(
+                    {
+                        "teamname": tname,
+                        "spieler1": clean_val(row.get("Spieler 1")),
+                        "spieler2": clean_val(row.get("Spieler 2")),
+                        "heimcourt": clean_val(row.get("Heimcourt")),
+                    }
+                )
 
         return rangliste, spiele, teams_liste
 
@@ -223,13 +237,13 @@ async def home(request: Request):
     tabelle, spiele, teams = lade_daten()
 
     return templates.TemplateResponse(
-        "index.html",
-        {
+        request=request,
+        name="index.html",
+        context={
             "tabelle": tabelle,
             "spiele": spiele,
             "teams": teams,
         },
-        request=request,
     )
 
 
