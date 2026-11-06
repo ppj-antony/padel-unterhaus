@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 from functools import cmp_to_key
 import pandas as pd
 import requests
@@ -7,7 +8,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 SPIELPLAN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK2uRw7bU4eF205lHo6qBNuomR9ZSNyHM78erlzNocqQJwmnvCpyVhEOYX67vpRwhFxmen3cUZIegK/pub?gid=860070356&single=true&output=csv"
 TEAMS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQK2uRw7bU4eF205lHo6qBNuomR9ZSNyHM78erlzNocqQJwmnvCpyVhEOYX67vpRwhFxmen3cUZIegK/pub?gid=0&single=true&output=csv"
